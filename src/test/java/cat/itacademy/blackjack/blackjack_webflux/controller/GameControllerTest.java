@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import cat.itacademy.blackjack.blackjack_webflux.dto.NewGameRequest;
 import cat.itacademy.blackjack.blackjack_webflux.model.Game;
 import cat.itacademy.blackjack.blackjack_webflux.model.GameStatus;
 import cat.itacademy.blackjack.blackjack_webflux.service.GameService;
@@ -30,11 +31,12 @@ class GameControllerTest {
     }
 
     @Test
-    void newGameEndpoint_shouldReturn201AndJson() {
+    void newGameEndpoint_returns201WithJason() {
+        // Prepare mock game with id "123" and playerName "Jason"
         Game mockGame = new Game();
-        mockGame.setId("game123");
+        mockGame.setId("123");
         mockGame.setPlayerId(1L);
-        mockGame.setPlayerName("Alice");
+        mockGame.setPlayerName("Jason");
         mockGame.setStatus(GameStatus.IN_PROGRESS);
 
         given(gameService.createGame(anyString()))
@@ -43,13 +45,27 @@ class GameControllerTest {
         client.post()
                 .uri("/game/new")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("{\"playerName\":\"Alice\"}")
+                .bodyValue(new NewGameRequest("Jason"))
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
-                .jsonPath("$.id").isEqualTo("game123")
-                .jsonPath("$.playerName").isEqualTo("Alice")
+                .jsonPath("$.id").isEqualTo("123")
+                .jsonPath("$.playerName").isEqualTo("Jason")
                 .jsonPath("$.status").isEqualTo("IN_PROGRESS");
+    }
+
+    @Test
+    void newGameEndpoint_whenServiceError_returns5xx() {
+        // Simulate service error
+        given(gameService.createGame(anyString()))
+                .willReturn(Mono.error(new RuntimeException("Some error")));
+
+        client.post()
+                .uri("/game/new")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new NewGameRequest("Jason"))
+                .exchange()
+                .expectStatus().is5xxServerError();
     }
 }

@@ -1,8 +1,11 @@
 package cat.itacademy.blackjack.blackjack_webflux.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.when;
@@ -22,41 +25,44 @@ class GameServiceTest {
 
     @Mock
     private PlayerRepository playerRepo;
-
     @Mock
     private GameRepository gameRepo;
-
     @InjectMocks
     private GameServiceImpl gameService;
 
     @Test
-    void createGame_shouldEmitNewGameWithExpectedFields() {
-        // 1) Simulamos que PlayerRepository encuentra un jugador "Alice"
-        Player mockPlayer = new Player();
-        mockPlayer.setId(1L);
-        mockPlayer.setName("Alice");
-        when(playerRepo.findByName("Alice"))
-                .thenReturn(Mono.just(mockPlayer));
+    void createGame_withExistingPlayer_returnsNewGame() {
+        // Mock player with name Jason and id 1L
+        Player mockPlayer = new Player(1L, "Jason", 0, 0);
+        when(playerRepo.findByName("Jason")).thenReturn(Mono.just(mockPlayer));
 
-        // 2) Simulamos que GameRepository al guardar asigna el ID "game123"
-        when(gameRepo.save(any(Game.class)))
-                .thenAnswer(inv -> {
-                    Game g = inv.getArgument(0);
-                    g.setId("game123");
-                    return Mono.just(g);
-                });
+        // Mock game save to return id "123"
+        when(gameRepo.save(any(Game.class))).thenAnswer(inv -> {
+            Game g = inv.getArgument(0);
+            g.setId("123");
+            return Mono.just(g);
+        });
 
-        // 3) Ejecutamos el método que aún no existe
-        Mono<Game> gameMono = gameService.createGame("Alice");
-
-        // 4) Verificamos con StepVerifier el comportamiento esperado
-        StepVerifier.create(gameMono)
-                .expectNextMatches(game
-                        -> "game123".equals(game.getId())
-                && game.getPlayerId().equals(1L)
-                && "Alice".equals(game.getPlayerName())
-                && game.getStatus() == GameStatus.IN_PROGRESS
-                )
+        StepVerifier.create(gameService.createGame("Jason"))
+                .assertNext(game -> {
+                    assertEquals("123", game.getId());
+                    assertEquals(1L, game.getPlayerId());
+                    assertEquals("Jason", game.getPlayerName());
+                    assertEquals(GameStatus.IN_PROGRESS, game.getStatus());
+                })
                 .verifyComplete();
+    }
+
+    @Test
+    void createGame_whenPlayerNotFound_emitsError() {
+        // Simulate no player found
+        when(playerRepo.findByName(anyString())).thenReturn(Mono.empty());
+
+        StepVerifier.create(gameService.createGame("Unknown"))
+                .expectErrorSatisfies(throwable -> {
+                    assertTrue(throwable instanceof RuntimeException);
+                    assertEquals("Player not found", throwable.getMessage());
+                })
+                .verify();
     }
 }
