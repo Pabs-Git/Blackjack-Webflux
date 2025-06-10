@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class NewGameRequest {
+public class PlayRequest {
 
-    private String playerName;
+    private String action; 
+    private double bet;
 }

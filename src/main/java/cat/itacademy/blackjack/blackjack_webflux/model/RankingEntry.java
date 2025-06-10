@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Card {
+public class RankingEntry {
 
-    private String suit;
-    private String rank;
+    private Long playerId;
+    private String name;
+    private int wins;
+    private int games;
 }

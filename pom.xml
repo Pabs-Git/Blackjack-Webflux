@@ -70,6 +70,13 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- 6. Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- 6. Test (JUnit 5, Mockito, Reactor Test) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

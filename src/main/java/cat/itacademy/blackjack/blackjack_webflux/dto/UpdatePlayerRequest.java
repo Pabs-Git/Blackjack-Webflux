@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class NewGameRequest {
+public class UpdatePlayerRequest {
 
-    private String playerName;
+    private String name;
 }
