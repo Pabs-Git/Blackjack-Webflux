@@ -82,9 +82,15 @@ class GameServiceTest {
 
     @Test
     void getRanking_returnsList() {
+        Player p1 = new Player(1L, "Jason", 5, 10);
+        Player p2 = new Player(2L, "Alice", 3, 8);
+
+        when(playerRepo.findAllByOrderByTotalWinsDesc())
+                .thenReturn(Flux.just(p1, p2));
+
         RankingEntry r1 = new RankingEntry(1L, "Jason", 5, 10);
         RankingEntry r2 = new RankingEntry(2L, "Alice", 3, 8);
-        when(gameRepo.getRanking()).thenReturn(Flux.just(r1, r2));
+
         StepVerifier.create(service.getRanking())
                 .expectNext(r1, r2)
                 .verifyComplete();

@@ -1,5 +1,6 @@
 package cat.itacademy.blackjack.blackjack_webflux.service;
 
+import cat.itacademy.blackjack.blackjack_webflux.dto.PlayRequest;
 import cat.itacademy.blackjack.blackjack_webflux.model.Game;
 import cat.itacademy.blackjack.blackjack_webflux.model.Player;
 import cat.itacademy.blackjack.blackjack_webflux.model.RankingEntry;
@@ -12,7 +13,7 @@ public interface GameService {
 
     Mono<Game> getGameById(String id);
 
-    Mono<Game> playRound(String id, Object playDto);
+    Mono<Game> playRound(String id, PlayRequest playDto);
 
     Mono<Void> deleteGame(String id);
 

@@ -1,5 +1,10 @@
 package cat.itacademy.blackjack.blackjack_webflux.service.impl;
 
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import cat.itacademy.blackjack.blackjack_webflux.dto.PlayRequest;
 import cat.itacademy.blackjack.blackjack_webflux.model.Game;
 import cat.itacademy.blackjack.blackjack_webflux.model.GameStatus;
 import cat.itacademy.blackjack.blackjack_webflux.model.Player;
@@ -7,7 +12,6 @@ import cat.itacademy.blackjack.blackjack_webflux.model.RankingEntry;
 import cat.itacademy.blackjack.blackjack_webflux.repository.GameRepository;
 import cat.itacademy.blackjack.blackjack_webflux.repository.PlayerRepository;
 import cat.itacademy.blackjack.blackjack_webflux.service.GameService;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +31,9 @@ public class GameServiceImpl implements GameService {
         return playerRepo.findByName(playerName)
                 .switchIfEmpty(Mono.error(new RuntimeException("Player not found")))
                 .flatMap(player -> {
+                    String newId = UUID.randomUUID().toString();
                     Game newGame = Game.builder()
+                            .id(newId)
                             .playerId(player.getId())
                             .playerName(player.getName())
                             .status(GameStatus.IN_PROGRESS)
@@ -43,9 +49,9 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Mono<Game> playRound(String id, Object playDto) {
+    public Mono<Game> playRound(String id, PlayRequest playDto) {
         return getGameById(id)
-                .flatMap(game -> gameRepo.save(game));
+                .flatMap(gameRepo::save);
     }
 
     @Override
@@ -55,7 +61,13 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public Flux<RankingEntry> getRanking() {
-        return gameRepo.getRanking();
+        return playerRepo.findAllByOrderByTotalWinsDesc()
+                .map(player -> new RankingEntry(
+                player.getId(),
+                player.getName(),
+                player.getTotalWins(),
+                player.getTotalGames()
+        ));
     }
 
     @Override

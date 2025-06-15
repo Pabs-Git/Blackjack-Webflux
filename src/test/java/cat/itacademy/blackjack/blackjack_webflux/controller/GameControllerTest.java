@@ -1,25 +1,28 @@
 package cat.itacademy.blackjack.blackjack_webflux.controller;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
 import cat.itacademy.blackjack.blackjack_webflux.dto.NewGameRequest;
 import cat.itacademy.blackjack.blackjack_webflux.dto.PlayRequest;
 import cat.itacademy.blackjack.blackjack_webflux.dto.UpdatePlayerRequest;
+import cat.itacademy.blackjack.blackjack_webflux.exception.GlobalExceptionHandler;
 import cat.itacademy.blackjack.blackjack_webflux.model.Game;
 import cat.itacademy.blackjack.blackjack_webflux.model.GameStatus;
 import cat.itacademy.blackjack.blackjack_webflux.model.Player;
 import cat.itacademy.blackjack.blackjack_webflux.model.RankingEntry;
 import cat.itacademy.blackjack.blackjack_webflux.service.GameService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class GameControllerTest {
@@ -31,7 +34,10 @@ class GameControllerTest {
     @BeforeEach
     void setUp() {
         GameController controller = new GameController(service);
-        client = WebTestClient.bindToController(controller).build();
+        client = WebTestClient
+                .bindToController(controller)
+                .controllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -83,7 +89,8 @@ class GameControllerTest {
         RankingEntry r = new RankingEntry(1L, "Jason", 5, 10);
         given(service.getRanking()).willReturn(Flux.just(r));
 
-        client.get().uri("/ranking")
+        client.get()
+                .uri("/game/ranking")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(RankingEntry.class)
@@ -95,10 +102,22 @@ class GameControllerTest {
         Player p = new Player(1L, "Jason", 0, 0);
         given(service.updatePlayer(1L, "NewJason")).willReturn(Mono.just(p));
 
-        client.put().uri("/player/{playerId}", 1)
+        client.put()
+                .uri("/game/player/{playerId}", 1)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new UpdatePlayerRequest("NewJason"))
                 .exchange()
                 .expectStatus().isOk();
+    }
+
+    @Test
+    void getGameById_notFound_returns404() {
+        given(service.getGameById("doesnt-exist"))
+                .willReturn(Mono.error(new RuntimeException("Game not found")));
+
+        client.get().uri("/game/{id}", "doesnt-exist")
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(String.class).isEqualTo("Game not found");
     }
 }
